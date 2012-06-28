@@ -1,0 +1,4 @@
+# Chapter 2 - Single-parameter models
+These notes explore various ideas discussed in Chapter 2 of Gelman et al *Bayesian Data Analysis*.
+
+# Examining Binomial distribution
