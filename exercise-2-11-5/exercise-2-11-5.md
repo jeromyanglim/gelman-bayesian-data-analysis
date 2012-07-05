@@ -1,4 +1,3 @@
-
 ```r
 library(ggplot2)
 library(gridExtra)
@@ -33,6 +32,7 @@ Pr(y=k) & = \int_0^1 Pr(y=k|\theta)d\theta \\
         & = \int_0^1 \binom{n}{y} \theta ^ y (1 - \theta)^{n-y}d\theta \\
         & = \frac{1}{n+1}
 \end{array}
+
 $$
 
 
