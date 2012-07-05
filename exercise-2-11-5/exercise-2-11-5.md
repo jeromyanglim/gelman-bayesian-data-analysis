@@ -1,5 +1,4 @@
 
-
 ```r
 library(ggplot2)
 library(gridExtra)
@@ -28,7 +27,8 @@ $$
 # Derive prior predictive distribution
 From equation 2.5, we know that 
 
-$$\begin{array}{ll}
+$$
+\begin{array}{ll}
 Pr(y=k) & = \int_0^1 Pr(y=k|\theta)d\theta \\
         & = \int_0^1 \binom{n}{y} \theta ^ y (1 - \theta)^{n-y}d\theta \\
         & = \frac{1}{n+1}
