@@ -1,4 +1,3 @@
-
 # Exercise 2-11-2
 To quote Problem 2.11.2 from Gelman et al (2004)
 > Predictive distributions: consider two coins, $C_1$ and $C_2$, with the following characteristics: Pr(heads|$C_1$)= 0.6 and Pr(heads|$C_2$) = 0.4. Choose one of the coins at random and imagine spinning it repeatedly. Given that the first two spins from the chosen coin are tails, what is the expectation of the number of additional spins until a head shows up?
@@ -45,9 +44,7 @@ first_head <- function(x, ignore_first_flips=2) {
 trials_to_head <- sapply(flips_first_two_tails, function(X) first_head(X))
 
 plot(prop.table(table(trials_to_head)))
-
 ## take the subset with two heads
-
 ```
 
 
@@ -55,3 +52,5 @@ plot(prop.table(table(trials_to_head)))
 
 print(xtable(prop.table(table(trials_to_head))), 'html')
 ```
+
+*Complete at a later point*.

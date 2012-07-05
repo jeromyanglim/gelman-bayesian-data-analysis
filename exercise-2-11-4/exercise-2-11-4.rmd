@@ -1,0 +1,183 @@
+`r opts_chunk$set(cache=TRUE)`
+
+```{r}
+key_values <- function(x, digits=2) {
+    round(c(mean=mean(x), var=var(x),sd=sd(x)), digits)
+}
+```
+
+
+> Predictive distributions: let $y$ be the number of 6's in 1000 independent rolls of a particular real die, which may be unfair. Let $\theta$ be the probability that the die lands on '6.' Suppose your prior distribution for $\theta$ is as follows:
+> $$
+\begin{array}{lll}
+Pr(\theta = 1/12) & = & 0.25,\\
+Pr(\theta = 1/6) & = & 0.5,\\
+Pr(\theta = 1/4) & = & 0.25.
+\end{array}
+$$
+> 
+> 1. Using the normal approximation for the conditional distributions, $p(y|\theta)$, sketch your approximate prior predictive distribution for $y$.
+> 2. Give approximate 5%, 25%, 50%, 75%, 95% points for the distribution of $y$. 
+
+# Set up prior
+Let $p(\theta_i)$ be the prior probability of the $i$ th posited value of $\theta_i$, where $i = 1, ..., k$, and $k = 3$.
+
+```{r tidy=FALSE}
+priors <- data.frame(
+    i = 1:3,
+    p_theta_i = c(.25, .5, .25),
+    theta_i = c(1/12, 1/6, 1/4),
+    n = rep(1000, 3))
+
+priors$mean <- priors$n * priors$theta_i
+priors$var <- with(priors, n * theta_i * (1 - theta_i))
+```
+
+The distribution $p(y|\theta)$ is a mixture distribution. 
+The mean and variance for weighted sums of normal distributions are [set out on Wikipedia](http://en.wikipedia.org/wiki/Mixture_distribution#Moments).
+
+Specifically,
+
+$$
+\begin{array}{lll}
+E(X) & = & \sum_{i=1}^k w_i \mu_i \\
+\text{var}(X) & = & \sum_{i=1}^k w_i((\mu_i - \mu)^2 + \sigma^2_i)
+\end{array}
+$$
+
+```{r}
+combined <- c(mean=sum(priors$mean * priors$p_theta_i))
+combined['var'] <- sum(priors$p_theta_i * 
+    ((priors$mean - combined['mean'])^2 + priors$var))
+combined['sd'] <- sqrt(combined['var'])
+```
+
+
+# Sketch the graph with percentiles
+```{r}
+percentiles <- c(.05, .25, .5, .75, .95)
+curve(dnorm(x, combined['mean'], combined['sd']), 
+      combined['mean'] - 4 * combined['sd'],
+      combined['mean'] + 4 * combined['sd'])
+(quantiles <- qnorm(percentiles, combined['mean'], combined['sd']))
+abline(v=quantiles, lty=2)
+```
+
+# Compare with simulation
+```{r}
+k <- 100000
+i <- sample(1:3, k, replace=TRUE, prob=priors$p_theta_i)
+y <- rbinom(k, priors$n[i], priors$theta_i[i])
+
+c(simulated_mean=mean(y), exact_mean=combined['mean'], 
+  simulated_sd=sd(y), exact_sd=combined['sd'])
+
+hist(sample(y), 100)
+```
+
+
+
+# Examining arithmetic on random variables
+## Sums of random variables
+
+The $E(X + Y) = E(X) + E(Y)$
+
+```{r}
+k <- 1E+6
+e_x <- 1
+e_y <- 2
+x <- rnorm(k, e_x, 3)
+y <- rnorm(k, e_y, 1)
+z <- x + y
+
+round(c(e_x=mean(x), e_y=mean(y), e_x_plus_y=mean(z)), 2)
+```
+
+## Variance of a sum of two independent random variables
+If $X$ and $Y$ are indendent then 
+
+$$
+\begin{array}{ll}
+\text{var}(X + Y)      & = \text{var}(X) + \text{var}(Y) \\
+\text{sd}(X + Y) & = \sqrt{\text{var}(X) + \text{var}(Y)}
+\end{array}
+$$
+
+```{r}
+k <- 1E+6
+Table <- expand.grid(e_x=c(0,1,2), e_y=c(0,1,2), 
+                     var_x=c(1,2), var_y=c(1,2))
+
+results <- t(apply(Table, 1, function(X) 
+    key_values(
+        rnorm(k, X['e_x'], sqrt(X['var_x'])) +
+            rnorm(k, X['e_y'], sqrt(X['var_y']))
+                   )))
+Table <- cbind(Table, results)
+Table$exact_var <- Table$var_x + Table$var_y
+
+Table$diff <- Table$var - Table$exact_var
+Table
+```
+
+
+## Variance of a multiple of a variable
+
+$$
+\begin{array}{lll}
+\text{sd}(bX) & = & \beta ~ \text{sd}(X) \\
+\text{var}(bX) & = & (\beta ~ \text{sd}(X))^2 = \beta ^2 ~ \text{sd}(X)^2 \\
+\end{array}
+$$
+
+```{r}
+k <- 1E+5
+Table <- expand.grid(beta=c(1,2,.5), x_sd=c(1,3), x_mean=c(0,1))
+
+results <- t(apply(Table, 1, function(X) 
+    key_values(X['beta'] * rnorm(k, X['x_mean'], X['x_sd']))))
+Table <- cbind(Table, results)
+Table$exact_var <- Table$beta^2 * Table$x_sd ^2
+
+Table$diff <- Table$var - Table$exact_var
+Table
+```
+
+## Mean and variance of mixture distributions
+```{r}
+k <- 10000
+Table <- expand.grid(
+    w_x=c(.1, .25, .5), 
+    mean_x=c(0,1),
+    mean_y=0,
+    var_x=c(1,4),
+    var_y=c(1,4))
+Table$w_y <- 1 - Table$w_x
+Table$sd_x <- sqrt(Table$var_x)
+Table$sd_y <- sqrt(Table$var_y)
+
+
+sample_mixture <- function(w_x, w_y, mean_x, mean_y, sd_x, sd_y, k=10000) {
+    i <- sample(1:2, k, replace=TRUE, prob=c(w_x, w_y))
+    y <- ifelse(i == 1,
+           rnorm(k, mean_x, sd_x),
+           rnorm(k, mean_y, sd_y))    
+    key_values(y)
+}
+
+results <- t(apply(Table, 1, function(X) 
+    sample_mixture(X['w_x'], X['w_y'], X['mean_x'], X['mean_y'],
+                   X['sd_x'], X['sd_y'])
+        ))
+
+Table <- cbind(Table, results)
+Table$exact_mean <- Table$w_x * Table$mean_x +
+    Table$w_y * Table$mean_y
+Table$exact_var <- 
+    Table$w_x *  ((Table$mean_x - Table$exact_mean)^2 + Table$var_x) +
+        Table$w_y *  ((Table$mean_y - Table$exact_mean)^2 + Table$var_y)
+        
+Table$diff <- Table$var - Table$exact_var
+Table        
+```
+

@@ -1,4 +1,3 @@
-
 # Exercise 2.11
 To quote Problem 2.11 from Gelman et al (2004)
 > Posterior inference: suppose there is Beta(4,4) prior distribution on the probability $\theta$ that a coin will yield a 'head' when spun in a specified manner. The coin is independently spun ten times, and 'heads' appear fewer than 3 times. You are not told how many heads were seen, only that the number is less than 3. Calculate your exact posterior density ( up to a proportionality consant) for $\theta$ and sketch it.

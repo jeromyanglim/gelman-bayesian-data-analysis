@@ -1,4 +1,6 @@
 
+
+
 # Exercise 2.11
 To quote Problem 2.11 from Gelman et al (2004)
 > Posterior inference: suppose there is Beta(4,4) prior distribution on the probability $\theta$ that a coin will yield a 'head' when spun in a specified manner. The coin is independently spun ten times, and 'heads' appear fewer than 3 times. You are not told how many heads were seen, only that the number is less than 3. Calculate your exact posterior density ( up to a proportionality consant) for $\theta$ and sketch it.
@@ -21,7 +23,7 @@ First let's examine the specific Beta distribution used in the exercise $\text{B
 curve(dbeta(x, 4, 4), from = 0, to = 1)
 ```
 
-![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
+![plot of chunk unnamed-chunk-3](https://github.com/jeromyanglim/gelman-bayesian-data-analysis/raw/master/exercise-2-11-1/figure/unnamed-chunk-3.png) 
 
 
 * The distribution appears unimodal, continuous on the interval $[0, 1]$ and symmetric. 
@@ -91,7 +93,7 @@ lines(x, x)
 lines(x, cumsum(dbeta_x_step_size))
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+![plot of chunk unnamed-chunk-5](https://github.com/jeromyanglim/gelman-bayesian-data-analysis/raw/master/exercise-2-11-1/figure/unnamed-chunk-5.png) 
 
 
 * This code shows how with a `step_size` of .001, the are numerically integrates to 1.
@@ -123,7 +125,7 @@ print(xtable(Table), type = "html", include.rownames = FALSE)
 ```
 
 <!-- html table generated in R 2.15.1 by xtable 1.7-0 package -->
-<!-- Tue Jun 26 16:32:20 2012 -->
+<!-- Thu Jun 28 14:01:35 2012 -->
 <TABLE border=1>
 <TR> <TH> x </TH> <TH> p_x </TH> <TH> dbinom </TH>  </TR>
   <TR> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> <TD align="right"> 0.00 </TD> </TR>
@@ -147,7 +149,7 @@ print(xtable(Table), type = "html", include.rownames = FALSE)
 plot(x, p_x, ylab = expression(p(theta)))
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+![plot of chunk unnamed-chunk-7](https://github.com/jeromyanglim/gelman-bayesian-data-analysis/raw/master/exercise-2-11-1/figure/unnamed-chunk-7.png) 
 
 
 
@@ -167,7 +169,7 @@ legend(0.6, 0.8, c("p(x<3)", "p(x=0)", "p(x=1)", "p(x=2)"), lty = 1,
     col = c("black", "red", "blue", "purple"))
 ```
 
-![plot of chunk likelihood](figure/likelihood.png) 
+![plot of chunk likelihood](https://github.com/jeromyanglim/gelman-bayesian-data-analysis/raw/master/exercise-2-11-1/figure/likelihood.png) 
 
 
 * The probability of getting 0, 1, or 2 heads is the sum of the individual probabilities.
@@ -196,7 +198,7 @@ legend(0.5, 3.5, c("Posterior", "Likelihood", "Prior"), lty = 1,
 abline(v = Theta[which.max(Numeric_Posterior)])
 ```
 
-![plot of chunk posterior](figure/posterior.png) 
+![plot of chunk posterior](https://github.com/jeromyanglim/gelman-bayesian-data-analysis/raw/master/exercise-2-11-1/figure/posterior.png) 
 
 
 * The vertical line shows the numerically estimated posterior mode (i.e., `0.281`). Naturally, the posterior mode (and mean) is between the mode (and mean) of the prior and the likelihood.
@@ -212,7 +214,7 @@ p(\theta|y \in \{0,1,2\}) & \propto p(y \in \{0,1,2\}|\theta) p(\theta)\\
 
 * The likelihood is the binomial distribution summed over the possible values of $y$. 
 * The prior is the beta distribution. The $\frac{\Gamma(4+4)}{\Gamma(4)\Gamma(4)}$ was removed from the beta distribution because it does not vary with $\theta$.
-* 
+* The equation was simplified by grouping terms.
 
 We can use this equation in R to plot the posterior.
 
@@ -230,7 +232,7 @@ Equation_Posterior <- sapply(Theta, function(X) posterior_direct(X))
 plot(Theta, Equation_Posterior, type = "l")
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
+![plot of chunk unnamed-chunk-8](https://github.com/jeromyanglim/gelman-bayesian-data-analysis/raw/master/exercise-2-11-1/figure/unnamed-chunk-8.png) 
 
 
 The following confirms that the numeric and equation estimates of the posterior agree up to a proporitionality constant.
@@ -241,7 +243,7 @@ The following confirms that the numeric and equation estimates of the posterior 
 plot(Numeric_Posterior, Equation_Posterior, pch = ".")
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
+![plot of chunk unnamed-chunk-9](https://github.com/jeromyanglim/gelman-bayesian-data-analysis/raw/master/exercise-2-11-1/figure/unnamed-chunk-9.png) 
 
 ```r
 cor(Numeric_Posterior, Equation_Posterior)

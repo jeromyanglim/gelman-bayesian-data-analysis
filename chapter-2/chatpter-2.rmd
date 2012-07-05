@@ -1,4 +1,242 @@
+`r opts_chunk$set(cache=TRUE)`
 # Chapter 2 - Single-parameter models
 These notes explore various ideas discussed in Chapter 2 of Gelman et al *Bayesian Data Analysis*.
 
 # Examining Binomial distribution
+The following is just a refresher on the [binomial coefficient](http://en.wikipedia.org/wiki/Binomial_coefficient)
+
+The following plots show the value for different values of $n$ and $k$.
+
+```{r}
+par(mfrow=c(3,3))
+plot_choose <- function(n, ...) {
+    plot(0:n, choose(n, 0:n), xlab='k', ylab='n choose k', ...)
+}
+
+for (X in c(2, 5, 8, 10, 20, 30, 50, 100, 200)) {
+    plot_choose(X, main=paste('n =', X))
+}
+```
+
+# Placenta privia example.
+
+```{r}
+german_data <- c(rep('female', 437), rep('male', 980 - 437))
+table(german_data)
+round(prop.table(table(german_data)), 3)
+
+```
+
+
+Examine beta distribution
+
+The following plots $\text{Beta}(438, 544)$.
+
+```{r}
+Alpha <- 438
+Beta <- 544
+curve(dbeta(x, Alpha, Beta), 
+      xlab=expression(theta),
+      ylab=expression(paste("p(", theta, "|y)"))
+      )
+expected_beta <- Alpha / (Alpha + Beta)
+var_beta <- (Alpha * Beta) /
+    ((Alpha + Beta) ^2 * (Alpha + Beta + 1))
+sd_beta <- sqrt(var_beta)
+abline(v=expected_beta)
+
+low_2.5_beta <- qbeta(.025, Alpha, Beta)
+hi_2.5_beta <- qbeta(.975, Alpha, Beta)
+abline(v=c(low_2.5_beta, hi_2.5_beta), lty=2)
+```
+
+Now let's compare beta to normal approximation
+
+```{r}
+low_2.5_normal <- qnorm(.025, expected_beta, sd_beta)
+hi_2.5_normal <- qnorm(.975, expected_beta, sd_beta)
+
+normal_beta <-cbind(`2.5`=c(low_2.5_normal, low_2.5_beta),
+      `97.5`=c(hi_2.5_normal, hi_2.5_beta))
+normal_beta <- rbind(normal_beta, apply(normal_beta, 2, diff))
+row.names(normal_beta) <- c('normal', 'beta', 'diff')
+round(normal_beta, 6)
+```
+
+* The normal approximation uses the mean and standard deviation of the Beta distribution in combination with the normal quantile function.
+* This confirms what the authors state about the similarity between the exact betaq and the normal approximation of the 95% posterior interval.
+* The values
+
+Now let's simulate 1000 draws from the Beta distribution and calculate the 95% interval.
+
+```{r}
+set.seed(1234)
+simulated_theta <- rbeta(1000, Alpha, Beta)
+low_2.5_sim_beta <- sort(simulated_theta)[25]
+hi_97.5_sim_beta <-sort(simulated_theta)[976]
+
+rbind(normal_beta, sim_beta=c(low_2.5_sim_beta, hi_97.5_sim_beta))
+
+median(simulated_theta)
+
+c(simulated=mean(simulated_theta), expected=expected_beta)
+
+c(simulated=sd(simulated_theta), sd=sd_beta)
+```
+
+* It might be interesting to compare results for smaller samples or for values of $\theta$ closer to zero or one.
+
+# Exploring table 2.1
+```{r}
+what_alpha_beta <- function(a_over_a_plus_b, a_plus_b) {
+    # determines alpha and beta for a beta function where
+    # alpha / (alpha + beta) and
+    # alpha + beta
+    # are known
+    
+    Alpha <- a_over_a_plus_b / a_plus_b
+    Beta <- a_plus_b - Alpha
+    c(Alpha=Alpha, Beta=Beta)
+}
+
+table_2.1 <- cbind(one=c(0.5, rep(.485, 6)),
+        two=c(2,2,5,10,20,100,200))
+
+table_2.1 <- cbind(table_2.1, 
+                   t(apply(table_2.1, 1, 
+                           function(X) what_alpha_beta(X[1], X[2]))))
+
+table_2.1
+# I haven't completed this analysis
+```
+
+# Piecewise linear density
+What are some examples of piecewise linear densities?
+
+Here's one strategy for constructing a piecewise density using increments and decrements and a cumulative total. However, it's normalised for discrete data, which is a limitation. 
+
+```{r}
+Data <- data.frame(theta=seq(0, 1, .01), 
+               raw_p=cumsum(c(1, rep(0, 40), rep(1, 10), rep(-1, 10), rep(0, 40))))
+
+Data$normalised_p <- Data$raw_p / sum(Data$raw_p) 
+plot(Data$theta, Data$normalised_p, type='l')
+```
+
+# Asthma death example
+```{r}
+Alpha <- 3
+Beta <- 5
+
+curve(dgamma(x, Alpha, Beta), from=0, to=4)
+abline(v=Alpha /Beta)
+abline(v=(Alpha  -1 ) / Beta)
+text(2,1, paste('E(X)=',Alpha /Beta))
+text(2,.9, paste('var(X)=', Alpha /Beta^2))
+text(2,.8, paste('mode(X)=', (Alpha  -1 ) / Beta))
+
+par(mfrow=c(3,3))
+curve(gamma(x), from=0.5, to=4)
+curve(gamma(x) * Beta ^ x, from=0.5, to=4)
+curve(1/ (gamma(x) * Beta ^ x), from=0.5, to=4)
+
+curve(Beta^x, from=0.5, 4)
+curve(exp(-Beta/x), from=0.5, to=4)
+curve(exp(-Beta/x), from=0.5, to=400)
+
+# Form used in Gelman
+curve(exp(-Beta * x), from=0.5, to=4)
+curve(exp(-Beta *x), from=0.5, to=400)
+```
+
+Note that there are different parameterisations of the Gamma distribution.
+
+* Some people use $e^{-\theta/\beta}$ (i.e., a scale parameter) whereas Gelman et al uses $e^{-\beta\theta}$ (i.e., a rate parameter).
+* This changes $E(X) = \alpha\beta$ to $E(X) = \frac{\alpha}{\beta}$.
+* The `dgamma` function defaults to a rate parameter, but also has an optional `scale` parameter that can be used.
+
+
+```{r}
+# sample from posterior
+x <- rgamma(1000, 6, 7)
+hist(x, 20, freq=FALSE)
+abline(v=mean(x))
+lines(density(x))
+
+```
+
+# Exponential distribution
+
+```{r}
+par(mfrow=c(2,2))
+Betas <- 1:4
+for (Beta in Betas) {
+curve(dexp(x, Beta), 0, 10)
+text(4, 1, paste('E(X)=', Beta))
+text(4, 0.6, paste('var(X)=', Beta^2))
+text(4, 0.4, paste('mode(X)=', 0))
+abline(v=1)
+}
+```
+
+# Example 2.8
+```{r}
+curve(dgamma(x, 20, 4.3E+5), from=0, to=.0001)
+set.seed(1234)
+thetas <- rgamma(500, 20, 4.3E+5)
+ys <- rpois(thetas, thetas*1.0E+4)
+mean(ys/1.0E+4)
+table(ys)
+prop.table(table(ys))
+
+thetas <- rgamma(500, 20, 4.3E+5)
+ys <- rpois(thetas, thetas*1.0E+6)
+mean(ys/1.0E+6)
+table(ys)
+prop.table(table(ys))
+```
+
+# Inverse chi-square distribution
+```{r}
+par(mfrow=c(3,3))
+curve(exp(x), 0, 10)
+curve(exp(-x), 0, 10)
+curve(exp(1/x), 0, 0.01)
+curve(exp(-1/x), 0, 10)
+curve(-1/x, 0, 10)
+curve(-1/(2*x), 0, 10)
+curve(exp(-1/(2*x)), 0, 10)
+```
+
+* $\exp(0)=1$
+* $\lim_{x \to -\infty} \exp(x) = 0$
+* $\lim_{x \to \infty} -1/x = 0$
+* $\lim_{x \to \infty} \exp(-1/x) = 1$
+
+
+```{r}
+par(mfrow=c(3,3))
+curve(x^(-(1/2 + 1)), 0, 10)
+```
+
+```{r}
+par(mfrow=c(3,3))
+plot_inv_chisquare_kernal <- function(Nu) {
+    curve(x^(-Nu/2-1)* exp(-1/(2*x)), 0, 5)    
+}
+
+plot_inv_chisquare_kernal(3)
+plot_inv_chisquare_kernal(2)
+plot_inv_chisquare_kernal(1)
+plot_inv_chisquare_kernal(1)
+
+curve(exp(x^(10/2-1)* (-1/(10*x))), 0, 10)
+```
+
+```{r}
+integrate(function(x) 1/x^2, 1, Inf)
+integrate(function(x) 1/x^2, 0.0001, Inf)
+integrate(function(x) 1/x^2, 0, Inf)
+```
+
+
